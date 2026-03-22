@@ -19,9 +19,11 @@ export interface LogsResponse {
 }
 
 export interface Service {
+  id?: number;
   name: string;
   url: string;
   description: string;
   icon: string;
-  color: 'casa' | 'immich' | 'nextcloud' | 'mc';
+  iconUrl?: string;
+  color: string;
 }
