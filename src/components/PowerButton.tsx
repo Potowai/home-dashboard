@@ -1,4 +1,4 @@
-import { Power, Play, Square } from 'lucide-react';
+import { Play, Square } from 'lucide-react';
 
 interface PowerButtonProps {
   isRunning: boolean;

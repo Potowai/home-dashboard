@@ -1,5 +1,4 @@
 import { Home, Server } from 'lucide-react';
-import type { Service } from '../types';
 
 interface HeaderProps {
   ip: string;
