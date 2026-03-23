@@ -26,4 +26,5 @@ export interface Service {
   icon: string;
   iconUrl?: string;
   color: string;
+  status?: 'online' | 'offline';
 }

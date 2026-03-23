@@ -1,12 +1,417 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:wght@100..800&display=swap');
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-deep: #020205;
+    --bg-primary: #050508;
+    --bg-secondary: rgba(10, 10, 15, 0.7);
+    --bg-elevated: rgba(20, 20, 30, 0.5);
+    --border: rgba(255, 255, 255, 0.06);
+    --border-bright: rgba(255, 255, 255, 0.12);
+    --accent: #00ff88;
+    --accent-dim: rgba(0, 255, 136, 0.15);
+    --accent-glow: rgba(0, 255, 136, 0.4);
+    --red: #ff3b5c;
+    --red-dim: rgba(255, 59, 92, 0.15);
+    --yellow: #ffcc00;
+    --blue: #00b4ff;
+    --text: #ffffff;
+    --text-secondary: #8b8b9a;
+    --text-dim: #4a4a5a;
+  }
+
+  [data-theme="light"] {
+    --bg-deep: #fdfdfd;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f4f7fa;
+    --bg-elevated: #e9eff5;
+    --border: rgba(0, 0, 0, 0.05);
+    --border-bright: rgba(0, 0, 0, 0.1);
+    --accent: #047857;
+    --accent-dim: rgba(4, 120, 87, 0.08);
+    --accent-glow: rgba(4, 120, 87, 0.15);
+    --red: #be123c;
+    --red-dim: rgba(190, 18, 60, 0.08);
+    --yellow: #a16207;
+    --blue: #0369a1;
+    --text: #020617;
+    --text-secondary: #1e293b;
+    --text-dim: #475569;
+  }
+
+  * {
+    @apply border-border-color;
+  }
+
+  html,
+  body {
+    @apply bg-bg-deep text-text-primary h-full font-sans antialiased overflow-x-hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+  }
 }
 
-#root {
-  width: 100%;
-  min-height: 100vh;
+@layer components {
+  .panel {
+    @apply bg-bg-secondary rounded-3xl border border-white/[0.06] overflow-hidden transition-all duration-300 backdrop-blur-3xl;
+    box-shadow: 0 4px 50px rgba(0, 0, 0, 0.2);
+  }
+
+  [data-theme="light"] .panel {
+    @apply bg-white border-black/[0.08];
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  }
+
+  [data-theme="light"] .bg-glass {
+    @apply bg-white/90 backdrop-blur-md;
+    background-image: none;
+  }
+
+  .panel.collapsed {
+    @apply h-[64px] min-h-[64px];
+  }
+
+  .panel-header {
+    @apply flex items-center justify-between p-4 px-6 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer hover:bg-white/[0.05] transition-all;
+  }
+
+  [data-theme="light"] .panel-header {
+    @apply border-black/[0.05] bg-black/[0.01] hover:bg-black/[0.03];
+  }
+
+  .btn-primary {
+    @apply bg-accent-color text-bg-deep px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all;
+  }
+
+  .btn-secondary {
+    @apply bg-bg-elevated text-text-secondary px-4 py-2 rounded-xl font-semibold flex items-center gap-2 border border-white/5 hover:border-accent-color/50 hover:text-accent-color transition-all;
+  }
+
+  [data-theme="light"] .btn-secondary {
+    @apply bg-white border-black/5 hover:text-accent-color;
+  }
+}
+
+/* Noise Texture Overlay */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  @apply opacity-[0.03] pointer-events-none z-[9999];
+}
+
+[data-theme="light"] .noise-overlay {
+  @apply opacity-[0.05];
+}
+
+/* Animations */
+@keyframes spinning {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinning {
+  animation: spinning 1s linear infinite;
+}
+
+@keyframes livePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+.live-dot {
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes grid-glow {
+  0% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--accent-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--accent-dim) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  animation: grid-glow 6s ease-in-out infinite;
+  z-index: -1;
+}
+
+[data-theme="light"] .noise-overlay {
+  opacity: 0.02;
+}
+
+/* Modal Styling & Animations */
+.modal-overlay {
+  @apply fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md;
+  z-index: 99999 !important;
+  animation: modal-fade-in 0.3s ease-out forwards;
+}
+
+.modal-content {
+  @apply bg-bg-secondary border border-white/10 rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl;
+  max-height: 90vh;
+  animation: modal-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+[data-theme="light"] .modal-content {
+  @apply bg-white border-black/5;
+}
+
+.modal-header {
+  @apply flex items-center justify-between p-8 border-b border-white/5;
+}
+
+[data-theme="light"] .modal-header {
+  @apply border-black/5;
+}
+
+.modal-title {
+  @apply flex items-center gap-3 text-xl font-black uppercase tracking-tighter italic text-accent-color;
+}
+
+.modal-body {
+  @apply p-8 space-y-6 flex flex-col;
+}
+
+.modal-footer {
+  @apply p-8 bg-black/20 border-t border-white/5 flex justify-end;
+}
+
+[data-theme="light"] .modal-footer {
+  @apply bg-black/5 border-black/5;
+}
+
+.form-group {
+  @apply flex flex-col gap-2;
+}
+
+.form-group label {
+  @apply text-[10px] font-black uppercase tracking-[0.2em] text-text-dim px-1;
+}
+
+.form-input {
+  @apply w-full bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-sm text-text-primary focus:border-accent-color focus:ring-4 focus:ring-accent-glow outline-none transition-all placeholder:text-text-secondary;
+}
+
+[data-theme="light"] .form-input {
+  @apply bg-black/[0.04] border-black/10 text-gray-900 placeholder:text-gray-400;
+}
+
+[data-theme="light"] .form-input:focus {
+  @apply border-accent-color ring-accent-glow;
+}
+
+[data-theme="light"] .form-group label {
+  color: #334155;
+}
+
+[data-theme="light"] .modal-body .text-accent-color\/60 {
+  color: var(--accent);
+}
+
+[data-theme="light"] .form-input+.text-text-dim,
+[data-theme="light"] .relative .text-text-dim {
+  color: #64748b;
+}
+
+.save-btn {
+  @apply bg-accent-color text-bg-deep px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-premium hover:shadow-accent disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.close-btn {
+  @apply p-2 rounded-xl bg-white/5 text-text-dim hover:text-white hover:bg-white/10 transition-all;
+}
+
+[data-theme="light"] .close-btn {
+  @apply bg-black/5 text-text-dim hover:text-black hover:bg-black/10;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+[data-theme="light"] .grid-bg {
+  background-image:
+    linear-gradient(var(--accent-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--accent-dim) 1px, transparent 1px);
+  opacity: 0.1;
+}
+
+/* Custom Scrollbar Utility */
+.custom-scrollbar::-webkit-scrollbar {
+  @apply w-1.5;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20;
+}
+
+[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-black/10 hover:bg-black/20;
+}
+
+/* Weather Panel Themes */
+.weather-panel-container {
+  @apply relative overflow-hidden mb-4 rounded-3xl transition-all duration-700;
+}
+
+.weather-gradient {
+  @apply absolute inset-0 opacity-50 z-0 transition-all duration-1000;
+}
+
+/* Specific Weather States */
+.weather-panel.clear .weather-gradient,
+.weather-panel.mainly-clear .weather-gradient {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+.weather-panel.rainy .weather-gradient,
+.weather-panel.drizzle .weather-gradient,
+.weather-panel.showers .weather-gradient {
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+.weather-panel.cloudy .weather-gradient,
+.weather-panel.overcast .weather-gradient,
+.weather-panel.partly-cloudy .weather-gradient {
+  background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
+}
+
+.weather-panel.stormy .weather-gradient {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+}
+
+/* Light Mode Overrides */
+[data-theme="light"] .weather-panel .weather-gradient {
+  opacity: 0.3;
+}
+
+
+/* React Grid Layout Overrides */
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, transform;
+}
+
+.react-grid-item.resizing {
+  transition: none;
+  z-index: 100;
+  will-change: width, height;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 100;
+  will-change: transform;
+}
+
+.react-grid-item>div {
+  height: 100%;
+}
+
+.react-grid-item .panel {
+  height: 100%;
+  display: flex !important;
+  flex-direction: column;
+  margin: 0 !important;
+  overflow: hidden;
+}
+
+.react-grid-item .panel.collapsed {
+  height: 100% !important;
+  min-height: unset !important;
+}
+
+.react-grid-item .panel>div:not(.panel-header) {
+  flex: 1;
+  overflow-y: inherit;
+  min-height: 0;
+}
+
+.react-grid-item .panel-header {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.react-grid-item .react-resizable-handle {
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 50;
+}
+
+.react-grid-item:hover .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-grid-item .react-resizable-handle::after {
+  border-right: 2px solid var(--accent-color) !important;
+  border-bottom: 2px solid var(--accent-color) !important;
 }

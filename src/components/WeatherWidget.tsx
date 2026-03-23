@@ -1,61 +1,53 @@
-import { Sun, Cloud, CloudRain } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { getWeather } from '../api/dashboard';
+import { Sun, Cloud, CloudRain, CloudLightning, Snowflake, Moon, CloudFog } from 'lucide-react';
+import { useWSChannel } from '../hooks/useWebSocket';
 
 export function WeatherWidget() {
-  const [weather, setWeather] = useState<any>(null);
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    const fetchWeather = async () => {
-      const data = await getWeather();
-      setWeather(data);
-    };
-    fetchWeather();
-    const weatherInterval = setInterval(fetchWeather, 600000); // 10 mins
-
-    const timeInterval = setInterval(() => setTime(new Date()), 1000);
-
-    return () => {
-      clearInterval(weatherInterval);
-      clearInterval(timeInterval);
-    };
-  }, []);
+  const weather = useWSChannel('weather');
 
   const getIcon = () => {
-    switch (weather?.condition) {
-      case 'Sunny': return <Sun className="weather-icon sunny" />;
-      case 'Cloudy': return <Cloud className="weather-icon" />;
-      case 'Rainy': return <CloudRain className="weather-icon rainy" />;
-      default: return <Cloud />;
+    if (!weather) return <Cloud size={32} />;
+    const { condition, isDay } = weather;
+
+    if (!isDay && (condition === 'Clear' || condition === 'Mainly Clear')) {
+      return <Moon size={32} className="text-blue-400" />;
+    }
+
+    switch (condition) {
+      case 'Clear':
+      case 'Mainly Clear':
+        return <Sun size={32} className="text-yellow-400" />;
+      case 'Partly Cloudy':
+      case 'Overcast':
+      case 'Cloudy':
+        return <Cloud size={32} className="text-gray-400" />;
+      case 'Foggy':
+        return <CloudFog size={32} className="text-gray-400" />;
+      case 'Drizzle':
+      case 'Showers':
+      case 'Rainy':
+        return <CloudRain size={32} className="text-blue-400" />;
+      case 'Snowy':
+      case 'Snow Showers':
+        return <Snowflake size={32} className="text-blue-200" />;
+      case 'Stormy':
+        return <CloudLightning size={32} className="text-purple-400" />;
+      default:
+        return <Cloud size={32} className="text-gray-400" />;
     }
   };
 
   return (
-    <div className="panel weather-panel">
-      <div className="weather-gradient" />
-      <div className="panel-body weather-body">
-        <div className="weather-main">
-          <div className="weather-temp">
-            {weather ? `${weather.temp}°C` : '--'}
-          </div>
-          <div className="weather-info">
-            <span className="weather-city">{weather?.city || 'Local'}</span>
-            <span className="weather-condition">{weather?.condition || 'Updating...'}</span>
-          </div>
-          <div className="weather-status-icon">
-            {getIcon()}
-          </div>
+    <div className="flex items-center gap-4 text-text-primary">
+      <div className="flex flex-col items-end">
+        <div className="text-2xl font-black tracking-tighter leading-none">
+          {weather ? `${weather.temp}°` : '--°'}
         </div>
-        
-        <div className="clock-section">
-          <div className="clock-time">
-            {time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}
-          </div>
-          <div className="clock-date">
-            {time.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-text-dim mt-1">
+          {weather?.condition || 'Loading'}
         </div>
+      </div>
+      <div>
+        {getIcon()}
       </div>
     </div>
   );
