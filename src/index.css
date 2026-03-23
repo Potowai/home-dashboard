@@ -240,7 +240,6 @@
 .mantine-Input-wrapper:has(.mantine-Input-section[data-position="left"]) .form-input {
   padding-left: 2.75rem;
 }
-
 [data-theme="light"] .form-input {
   @apply bg-black/[0.04] border-black/10 text-gray-900 placeholder:text-gray-400;
 }
