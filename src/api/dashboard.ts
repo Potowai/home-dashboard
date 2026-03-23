@@ -75,6 +75,38 @@ export async function updateSettings(settings: any): Promise<boolean> {
   }
 }
 
+export async function getStatsHistory(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/stats/history`);
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function getDockerContainers(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/docker`);
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function controlDockerContainer(id: string, action: 'start' | 'stop' | 'restart'): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/docker/control`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action })
+    });
+    const result = await res.json();
+    return result.success;
+  } catch {
+    return false;
+  }
+}
+
 export async function getStatus(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/api/status`);

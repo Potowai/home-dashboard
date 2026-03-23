@@ -1,57 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getStatus, toggleServer, getLogs, clearLogs } from '../api/dashboard';
+import { useState, useCallback } from 'react';
+import { toggleServer, clearLogs } from '../api/dashboard';
+import { useWSChannel } from './useWebSocket';
 import type { LogEntry } from '../types';
 
-export function useDashboard() {
-  const [isRunning, setIsRunning] = useState(false);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+export function useDashboard(_isStatusCollapsed: boolean = false, _isLogsCollapsed: boolean = false) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchStatus = useCallback(async () => {
-    const status = await getStatus();
-    setIsRunning(status);
-  }, []);
+  // Subscribe to WS channels instead of polling
+  const statusData = useWSChannel<{ running: boolean }>('status');
+  const logsData = useWSChannel<{ logs: LogEntry[] }>('logs');
 
-  const fetchLogs = useCallback(async () => {
-    const data = await getLogs();
-    setLogs(data.logs);
-  }, []);
+  const isRunning = statusData?.running ?? false;
+  const logs = logsData?.logs ?? [];
 
   const toggle = useCallback(async () => {
     setIsLoading(true);
     const result = await toggleServer();
-    setIsRunning(result.running);
     setIsLoading(false);
-    if (result.success) {
-      addLocalLog('INFO', `Server ${result.running ? 'started' : 'stopped'} successfully`);
-    } else {
-      addLocalLog('ERROR', result.error || 'Operation failed');
+    // Server will broadcast 'status' and 'logs' updates via WS
+    if (!result.success) {
+      console.error('Toggle failed:', result.error);
     }
   }, []);
 
-  const addLocalLog = (level: LogEntry['level'], message: string) => {
-    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-    setLogs(prev => [...prev, { time, level, message }]);
-  };
-
   const clear = useCallback(async () => {
     await clearLogs();
-    setLogs([]);
+    // Server will broadcast empty logs via WS
   }, []);
 
-  useEffect(() => {
-    fetchStatus();
-    fetchLogs();
-  }, [fetchStatus, fetchLogs]);
-
-  useEffect(() => {
-    const statusInterval = setInterval(fetchStatus, 3000);
-    const logsInterval = setInterval(fetchLogs, 1000);
-    return () => {
-      clearInterval(statusInterval);
-      clearInterval(logsInterval);
-    };
-  }, [fetchStatus, fetchLogs]);
+  const addLocalLog = (_level: LogEntry['level'], _message: string) => {
+    // Logs now come from the server's WS broadcast; local-only logs are not needed
+  };
 
   return {
     isRunning,
