@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
@@ -8,6 +9,10 @@ const si = require('systeminformation');
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Domains and default values from .env
+const DOMAIN = process.env.VITE_DASHBOARD_DOMAIN || 'example.com';
+const DEFAULT_IP = process.env.VITE_DEFAULT_IP || '192.168.1.1';
 
 let db;
 
@@ -40,10 +45,10 @@ let db;
     const servicesCount = await db.get('SELECT COUNT(*) as count FROM services');
     if (servicesCount.count === 0) {
         const defaultServices = [
-            { name: 'CasaOS', url: 'https://casa.potowai.cloud', description: 'System Management', icon: 'casa', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/casaos.svg', color: 'casa' },
-            { name: 'Immich', url: 'https://immich.potowai.cloud', description: 'Photo Backup', icon: 'immich', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/immich.svg', color: 'immich' },
-            { name: 'Nextcloud', url: 'https://nextcloud.potowai.cloud', description: 'File Storage', icon: 'nextcloud', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nextcloud.svg', color: 'nextcloud' },
-            { name: 'Minecraft', url: 'https://mc.potowai.cloud', description: 'Game Server', icon: 'mc', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/minecraft.svg', color: 'mc' }
+            { name: 'CasaOS', url: `https://casa.${DOMAIN}`, description: 'System Management', icon: 'casa', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/casaos.svg', color: 'casa' },
+            { name: 'Immich', url: `https://immich.${DOMAIN}`, description: 'Photo Backup', icon: 'immich', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/immich.svg', color: 'immich' },
+            { name: 'Nextcloud', url: `https://nextcloud.${DOMAIN}`, description: 'File Storage', icon: 'nextcloud', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nextcloud.svg', color: 'nextcloud' },
+            { name: 'Minecraft', url: `https://mc.${DOMAIN}`, description: 'Game Server', icon: 'mc', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/minecraft.svg', color: 'mc' }
         ];
 
         for (const s of defaultServices) {
@@ -60,7 +65,7 @@ let db;
         const defaultSettings = [
             { key: 'weather_city', value: 'Toulouse' },
             { key: 'dashboard_title', value: 'Home Dashboard' },
-            { key: 'ip_address', value: '192.168.1.138' }
+            { key: 'ip_address', value: DEFAULT_IP }
         ];
         for (const s of defaultSettings) {
             await db.run('INSERT INTO settings (key, value) VALUES (?, ?)', [s.key, s.value]);

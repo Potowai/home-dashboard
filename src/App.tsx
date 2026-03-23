@@ -64,13 +64,12 @@ function App() {
       <div className="grid-bg" />
       
       <div className="container">
-        <div className="header-top">
-          <Header ip={settings?.ip_address || "192.168.1.138"} title={settings?.dashboard_title} />
+        <Header ip={settings?.ip_address || import.meta.env.VITE_DEFAULT_IP || "192.168.1.1"} title={settings?.dashboard_title}>
           <button className="settings-btn" onClick={() => setIsSettingsOpen(true)}>
             <Settings size={18} />
             Settings
           </button>
-        </div>
+        </Header>
 
         <WeatherWidget key={settings?.weather_city} />
 
@@ -161,7 +160,7 @@ function App() {
         </div>
 
         <footer>
-          <p>{settings?.dashboard_title || 'potowai.cloud'} | Tailscale: 100.80.72.64</p>
+          <p>{settings?.dashboard_title || import.meta.env.VITE_DASHBOARD_DOMAIN || 'example.com'} | Tailscale: {import.meta.env.VITE_TAILSCALE_IP || '100.x.y.z'}</p>
         </footer>
       </div>
 

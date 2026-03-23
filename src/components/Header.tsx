@@ -3,9 +3,10 @@ import { Home, Server } from 'lucide-react';
 interface HeaderProps {
   ip: string;
   title?: string;
+  children?: React.ReactNode;
 }
 
-export function Header({ ip, title }: HeaderProps) {
+export function Header({ ip, title, children }: HeaderProps) {
   const renderTitle = () => {
     if (!title) return <span className="logo-text">Home <span>Dashboard</span></span>;
     const parts = title.split(' ');
@@ -27,9 +28,12 @@ export function Header({ ip, title }: HeaderProps) {
         </div>
         {renderTitle()}
       </div>
-      <div className="server-badge">
-        <Server size={14} />
-        <span>{ip}</span>
+      <div className="header-actions">
+        <div className="server-badge">
+          <Server size={14} />
+          <span>{ip}</span>
+        </div>
+        {children}
       </div>
     </header>
   );

@@ -58,9 +58,9 @@ body {
 .container {
   position: relative;
   z-index: 1;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 16px 24px;
 }
 
 /* Header */
@@ -68,9 +68,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 48px;
-  padding-bottom: 32px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .logo {
@@ -144,7 +150,7 @@ body {
 .main-grid {
   display: grid;
   grid-template-columns: 1fr 400px;
-  gap: 24px;
+  gap: 16px;
 }
 
 @media (max-width: 1024px) {
@@ -205,7 +211,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   box-shadow: 0 0 40px rgba(74, 222, 128, 0.3);
 }
 
@@ -342,7 +348,7 @@ body {
 
 /* Services */
 .services-section {
-  margin-top: 24px;
+  margin-top: 16px;
 }
 
 .services-grid {
@@ -462,7 +468,7 @@ body {
 
 /* Form Styles */
 .add-service-panel {
-  margin-top: 24px;
+  margin-top: 16px;
 }
 
 .form-grid {
@@ -530,7 +536,7 @@ body {
 
 /* Stats Panel */
 .stats-panel {
-  margin-top: 24px;
+  margin-top: 16px;
 }
 
 .stats-body {
@@ -614,7 +620,7 @@ body {
 .weather-panel {
   position: relative;
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .weather-gradient {
@@ -912,7 +918,7 @@ footer {
   .weather-body {
     flex-direction: column;
     text-align: center;
-    gap: 24px;
+    gap: 16px;
   }
 
   .clock-section {
