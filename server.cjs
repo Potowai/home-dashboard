@@ -118,13 +118,24 @@ async function fetchServices() {
 async function fetchDocker() {
     try {
         const containers = await si.dockerContainers();
-        const data = containers.map(c => ({
-            id: c.id,
-            name: c.name,
-            image: c.image,
-            state: c.state,
-            status: c.status
-        }));
+        const data = containers.map(c => {
+            // Extract compose project from labels if available
+            let project = 'Standalone';
+            if (c.labels) {
+                const projectLabel = c.labels.find(l => l.startsWith('com.docker.compose.project='));
+                if (projectLabel) {
+                    project = projectLabel.replace('com.docker.compose.project=', '');
+                }
+            }
+            return {
+                id: c.id,
+                name: c.name,
+                image: c.image,
+                state: c.state,
+                status: c.status,
+                project
+            };
+        });
         dataCache.docker = data;
         return data;
     } catch (err) {
@@ -204,6 +215,10 @@ async function fetchStatus() {
         driver: sqlite3.Database
     });
 
+    // Add new columns if they don't exist (graceful migration)
+    await db.exec(`ALTER TABLE services ADD COLUMN category TEXT DEFAULT 'System'`);
+    await db.exec(`ALTER TABLE services ADD COLUMN isPinned INTEGER DEFAULT 0`);
+
     await db.exec(`
         CREATE TABLE IF NOT EXISTS services (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -212,7 +227,9 @@ async function fetchStatus() {
             description TEXT,
             icon TEXT,
             iconUrl TEXT,
-            color TEXT
+            color TEXT,
+            category TEXT DEFAULT 'System',
+            isPinned INTEGER DEFAULT 0
         )
     `);
 
@@ -235,16 +252,19 @@ async function fetchStatus() {
     const servicesCount = await db.get('SELECT COUNT(*) as count FROM services');
     if (servicesCount.count === 0) {
         const defaultServices = [
-            { name: 'CasaOS', url: `https://casa.${DOMAIN}`, description: 'System Management', icon: 'casa', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/casaos.svg', color: 'casa' },
-            { name: 'Immich', url: `https://immich.${DOMAIN}`, description: 'Photo Backup', icon: 'immich', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/immich.svg', color: 'immich' },
-            { name: 'Nextcloud', url: `https://nextcloud.${DOMAIN}`, description: 'File Storage', icon: 'nextcloud', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nextcloud.svg', color: 'nextcloud' },
-            { name: 'Minecraft', url: `https://mc.${DOMAIN}`, description: 'Game Server', icon: 'mc', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/minecraft.svg', color: 'mc' }
+            { name: 'CasaOS', url: `https://casa.${DOMAIN}`, description: 'System Management', icon: 'casa', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/casaos.svg', color: 'casa', category: 'System' },
+            { name: 'Immich', url: `https://immich.${DOMAIN}`, description: 'Photo Backup', icon: 'immich', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/immich.svg', color: 'immich', category: 'Media' },
+            { name: 'Nextcloud', url: `https://nextcloud.${DOMAIN}`, description: 'File Storage', icon: 'nextcloud', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nextcloud.svg', color: 'nextcloud', category: 'Media' },
+            { name: 'Pi-hole', url: `https://pihole.${DOMAIN}`, description: 'Network Ad Blocking', icon: 'pi-hole', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/pihole.svg', color: 'pi-hole', category: 'System' },
+            { name: 'Vaultwarden', url: `https://vault.${DOMAIN}`, description: 'Password Manager', icon: 'vaultwarden', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/vaultwarden.svg', color: 'vaultwarden', category: 'Security' },
+            { name: 'Jellyfin', url: `https://jellyfin.${DOMAIN}`, description: 'Media Server', icon: 'jellyfin', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg', color: 'jellyfin', category: 'Media' },
+            { name: 'Minecraft', url: `https://mc.${DOMAIN}`, description: 'Game Server', icon: 'minecraft', iconUrl: 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/minecraft.svg', color: 'minecraft', category: 'Media' }
         ];
 
         for (const s of defaultServices) {
             await db.run(
-                'INSERT INTO services (name, url, description, icon, iconUrl, color) VALUES (?, ?, ?, ?, ?, ?)',
-                [s.name, s.url, s.description, s.icon, s.iconUrl, s.color]
+                'INSERT INTO services (name, url, description, icon, iconUrl, color, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [s.name, s.url, s.description, s.icon, s.iconUrl, s.color, s.category]
             );
         }
     }
@@ -326,15 +346,41 @@ app.get('/api/services', async (req, res) => {
 });
 
 app.post('/api/services', async (req, res) => {
-    const { name, url, description, icon, iconUrl, color } = req.body;
+    const { name, url, description, icon, iconUrl, color, category, isPinned } = req.body;
     try {
         await db.run(
-            'INSERT INTO services (name, url, description, icon, iconUrl, color) VALUES (?, ?, ?, ?, ?, ?)',
-            [name, url, description, icon, iconUrl, color]
+            'INSERT INTO services (name, url, description, icon, iconUrl, color, category, isPinned) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, url, description, icon, iconUrl, color, category || 'System', isPinned ? 1 : 0]
         );
         const newService = await db.get('SELECT * FROM services ORDER BY id DESC LIMIT 1');
         res.status(201).json(newService);
         // Push updated services list to all clients
+        const services = await fetchServices();
+        broadcast('services', services);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/services/:id', async (req, res) => {
+    const { name, url, description, icon, iconUrl, color, category, isPinned } = req.body;
+    try {
+        const fields = [];
+        const values = [];
+        if (name !== undefined) { fields.push('name = ?'); values.push(name); }
+        if (url !== undefined) { fields.push('url = ?'); values.push(url); }
+        if (description !== undefined) { fields.push('description = ?'); values.push(description); }
+        if (icon !== undefined) { fields.push('icon = ?'); values.push(icon); }
+        if (iconUrl !== undefined) { fields.push('iconUrl = ?'); values.push(iconUrl); }
+        if (color !== undefined) { fields.push('color = ?'); values.push(color); }
+        if (category !== undefined) { fields.push('category = ?'); values.push(category); }
+        if (isPinned !== undefined) { fields.push('isPinned = ?'); values.push(isPinned ? 1 : 0); }
+
+        if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
+
+        values.push(req.params.id);
+        await db.run(`UPDATE services SET ${fields.join(', ')} WHERE id = ?`, values);
+        res.json({ success: true });
         const services = await fetchServices();
         broadcast('services', services);
     } catch (err) {

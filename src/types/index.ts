@@ -26,5 +26,21 @@ export interface Service {
   icon: string;
   iconUrl?: string;
   color: string;
+  category: string;
+  isPinned?: boolean;
   status?: 'online' | 'offline';
+}
+
+export type ServiceCategory = {
+  name: string;
+  services: Service[];
+};
+
+export interface DockerContainer {
+  id: string;
+  name: string;
+  image: string;
+  state: 'running' | 'paused' | 'exited' | 'created';
+  status: string;
+  project?: string;
 }

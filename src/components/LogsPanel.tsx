@@ -1,69 +1,158 @@
-import { Activity, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Activity, Trash2, ChevronDown } from 'lucide-react';
 import type { LogEntry } from '../types';
 
 interface LogsPanelProps {
   logs: LogEntry[];
   onClear: () => void;
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
 }
 
-export function LogsPanel({ logs, onClear, isCollapsed, setIsCollapsed }: LogsPanelProps) {
+function LogEntryRow({ log }: { log: LogEntry }) {
   return (
-    <div className={`panel flex flex-col ${isCollapsed ? 'h-[64px]' : 'h-[500px]'}`}>
-      <div 
-        className="panel-header flex-shrink-0"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        <div className="flex items-center gap-3">
-          <Activity size={18} className="text-accent-color" />
-          <span className="panel-title font-black uppercase tracking-tighter">System Kernel Logs</span>
+    <div className="log-entry">
+      <span className="mono" style={{ color: 'var(--text-secondary)', fontSize: '11px', flexShrink: 0 }}>
+        {log.time}
+      </span>
+      <span className={`log-level ${log.level}`}>{log.level}</span>
+      <span style={{ color: 'var(--text-primary)', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {log.message}
+      </span>
+    </div>
+  );
+}
+
+export function LogsPanel({ logs, onClear }: LogsPanelProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="panel-section">
+      {/* Header */}
+      <div className="panel-header" onClick={() => setIsOpen(!isOpen)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Activity size={16} style={{ color: 'var(--accent)' }} />
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Logs</span>
+          {!isOpen && logs.length > 0 && (
+            <span
+              style={{
+                fontSize: '10px',
+                padding: '2px 6px',
+                borderRadius: '20px',
+                background: 'rgba(126, 200, 160, 0.15)',
+                color: 'var(--status-green)',
+              }}
+            >
+              {logs.length} entries
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-accent-dim/50 border border-accent-color/20">
-            <span className="live-dot w-1.5 h-1.5 rounded-full bg-accent-color" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-accent-color">Streaming</span>
-          </div>
-          <button className="text-text-dim hover:text-accent-color transition-colors">
-            {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-          </button>
-        </div>
+        <ChevronDown
+          size={14}
+          style={{
+            color: 'var(--text-secondary)',
+            transform: isOpen ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.2s',
+          }}
+        />
       </div>
 
-      {!isCollapsed && (
-        <>
-          <div className="flex-shrink-0 p-3 px-6 border-b border-white/[0.06] bg-white/[0.02] flex justify-end">
-            <button 
-              onClick={(e) => { e.stopPropagation(); onClear(); }}
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-dim hover:text-red-color transition-colors"
+      {/* Ticker (collapsed) */}
+      {!isOpen && logs.length > 0 && (
+        <div style={{
+          padding: '10px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          overflow: 'hidden',
+          borderTop: '1px solid var(--border-subtle)',
+        }}>
+          {logs.slice(0, 3).map((log, i) => (
+            <div
+              key={i}
+              className="mono fade-in"
+              style={{
+                fontSize: '11px',
+                color: 'var(--text-secondary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ color: 'var(--text-secondary)', flexShrink: 0 }}>{log.time}</span>
+              <span
+                style={{
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  padding: '1px 4px',
+                  borderRadius: '3px',
+                  background: log.level === 'WARN' ? 'rgba(232, 200, 124, 0.1)' :
+                             log.level === 'ERROR' ? 'rgba(232, 138, 124, 0.1)' :
+                             log.level === 'DEBUG' ? 'rgba(168, 124, 168, 0.1)' :
+                             'var(--surface-elevated)',
+                  color: log.level === 'WARN' ? 'var(--status-amber)' :
+                         log.level === 'ERROR' ? 'var(--status-red)' :
+                         log.level === 'DEBUG' ? 'var(--graph-purple)' :
+                         'var(--text-secondary)',
+                  flexShrink: 0,
+                }}
+              >
+                {log.level}
+              </span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {log.message}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Expanded view */}
+      {isOpen && (
+        <div className="fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Actions */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            padding: '10px 20px',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}>
+            <button
+              onClick={onClear}
+              className="btn-ghost"
+              style={{ fontSize: '11px' }}
             >
               <Trash2 size={12} />
-              Purge Buffer
+              Clear
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-3 font-mono text-[11px] custom-scrollbar bg-bg-primary/30">
+
+          {/* Log list */}
+          <div
+            className="custom-scrollbar"
+            style={{
+              maxHeight: '320px',
+              overflowY: 'auto',
+              padding: '12px 20px',
+            }}
+          >
             {logs.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center gap-4 opacity-20">
-                <Loader2 size={32} className="animate-spin" />
-                <span className="uppercase tracking-[0.3em] font-black">Waiting for system noise...</span>
+              <div style={{
+                textAlign: 'center',
+                padding: '32px',
+                color: 'var(--text-secondary)',
+                fontSize: '13px',
+              }}>
+                No log entries yet
               </div>
             ) : (
-              logs.map((log, index) => (
-                <div key={index} className="flex gap-4 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-all group">
-                  <span className="text-text-dim whitespace-nowrap opacity-50 group-hover:opacity-100 transition-opacity">[{log.time}]</span>
-                  <span className={`font-black uppercase tracking-widest px-1.5 rounded text-[9px] h-fit mt-0.5 ${
-                    log.level === 'ERROR' ? 'text-red-color bg-red-dim border border-red-color/20' :
-                    log.level === 'WARN' ? 'text-yellow-400 bg-yellow-400/10 border border-yellow-400/20' :
-                    'text-accent-color bg-accent-dim border border-accent-color/20'
-                  }`}>
-                    {log.level}
-                  </span>
-                  <span className="text-text-secondary leading-relaxed break-all">{log.message}</span>
-                </div>
+              [...logs].reverse().map((log, i) => (
+                <LogEntryRow key={i} log={log} />
               ))
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

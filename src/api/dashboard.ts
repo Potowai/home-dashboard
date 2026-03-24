@@ -24,6 +24,19 @@ export async function addService(service: Omit<Service, 'id'>): Promise<Service 
   }
 }
 
+export async function updateService(id: number, service: Partial<Service>): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/services/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(service)
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function deleteService(id: number): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/api/services/${id}`, {

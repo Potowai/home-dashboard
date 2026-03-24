@@ -1,100 +1,187 @@
-import { Box, ChevronDown, ChevronUp, RefreshCw, Play, Square, Loader2 } from 'lucide-react';
+import { Box, ChevronDown, Play, Square, RotateCcw, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { controlDockerContainer } from '../api/dashboard';
 import { useWSChannel, useWSSend } from '../hooks/useWebSocket';
+import { controlDockerContainer } from '../api/dashboard';
+
+function groupByProject(containers: any[]): Map<string, any[]> {
+  const groups = new Map<string, any[]>();
+  for (const c of containers) {
+    const project = c.project || 'Standalone';
+    if (!groups.has(project)) groups.set(project, []);
+    groups.get(project)!.push(c);
+  }
+  return groups;
+}
 
 export function DockerPanel() {
-  const wsContainers = useWSChannel<any[]>('docker');
+  const containers = useWSChannel<any[]>('docker') || [];
   const send = useWSSend();
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
 
-  const containers = wsContainers || [];
+  const grouped = groupByProject(containers);
+  const runningCount = containers.filter(c => c.state === 'running').length;
 
   const handleRefresh = () => {
-    setIsLoading(true);
     send({ type: 'refresh', channel: 'docker' });
-    // Reset loading after a reasonable delay (WS response will update the data)
-    setTimeout(() => setIsLoading(false), 1000);
   };
 
   const handleControl = async (id: string, action: 'start' | 'stop' | 'restart') => {
-    setActionLoading(`${id}-${action}`);
+    setLoading(`${id}-${action}`);
     await controlDockerContainer(id, action);
-    // Server broadcasts updated docker data via WS after the action
-    setActionLoading(null);
+    setLoading(null);
   };
 
   return (
-    <div className={`panel ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="panel-header" onClick={() => setIsCollapsed(!isCollapsed)}>
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-white/[0.03] text-blue-color">
-            <Box size={18} />
-          </div>
-          <span className="panel-title font-black uppercase tracking-tighter">Docker Containers</span>
+    <div className="panel-section">
+      {/* Header */}
+      <div className="panel-header" onClick={() => setIsOpen(!isOpen)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box size={16} style={{ color: 'var(--accent)' }} />
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Containers</span>
+          <span style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            borderRadius: '20px',
+            background: 'var(--surface-elevated)',
+            color: 'var(--text-secondary)',
+          }}>
+            {runningCount}/{containers.length} running
+          </span>
         </div>
-        <div className="flex items-center gap-3">
-          {!isCollapsed && (
-            <button 
-              className={`p-1.5 rounded-lg hover:bg-white/[0.05] text-text-dim hover:text-accent-color transition-all ${isLoading ? 'spinning' : ''}`} 
-              onClick={(e) => { e.stopPropagation(); handleRefresh(); }}
-            >
-              <RefreshCw size={14} />
-            </button>
-          )}
-          <button className="collapse-btn text-text-dim hover:text-accent-color">
-            {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleRefresh(); }}
+            className="btn-icon"
+            title="Refresh"
+          >
+            <Loader2 size={14} />
           </button>
+          <ChevronDown
+            size={14}
+            style={{
+              color: 'var(--text-secondary)',
+              transform: isOpen ? 'rotate(180deg)' : 'none',
+              transition: 'transform 0.2s',
+            }}
+          />
         </div>
       </div>
 
-      {!isCollapsed && (
-        <div className="p-5 space-y-3">
+      {/* Content */}
+      {isOpen && (
+        <div className="fade-in" style={{ padding: '16px 20px' }}>
           {containers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-text-dim">
-              <Box size={40} className="opacity-10 mb-4" />
-              <span className="text-xs font-bold uppercase tracking-widest">No containers found</span>
+            <div style={{
+              textAlign: 'center',
+              padding: '32px',
+              color: 'var(--text-secondary)',
+              fontSize: '13px',
+            }}>
+              No containers found
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-2.5">
-              {containers.map((container) => (
-                <div key={container.id} className="group flex items-center justify-between p-4 bg-bg-primary rounded-2xl border border-white/[0.04] hover:border-white/[0.1] hover:bg-white/[0.02] transition-all">
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-black text-text-primary tracking-tight group-hover:text-accent-color transition-colors">{container.name}</span>
-                    <span className="text-[10px] text-text-dim font-mono tracking-tighter truncate max-w-[200px]" title={container.image}>{container.image}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {[...grouped.entries()].map(([project, pcs]) => (
+                <div key={project}>
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '8px',
+                  }}>
+                    {project}
                   </div>
-                  
-                  <div className="flex items-center gap-5">
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                      {container.state === 'running' ? (
-                        <button 
-                          className="w-8 h-8 rounded-lg bg-red-dim text-red-color flex items-center justify-center hover:scale-110 active:scale-90 transition-all" 
-                          onClick={() => handleControl(container.id, 'stop')}
-                          disabled={actionLoading !== null}
-                          title="Stop container"
-                        >
-                          {actionLoading === `${container.id}-stop` ? <Loader2 size={12} className="spinning" /> : <Square size={12} fill="currentColor" />}
-                        </button>
-                      ) : (
-                        <button 
-                          className="w-8 h-8 rounded-lg bg-accent-dim text-accent-color flex items-center justify-center hover:scale-110 active:scale-90 transition-all" 
-                          onClick={() => handleControl(container.id, 'start')}
-                          disabled={actionLoading !== null}
-                          title="Start container"
-                        >
-                          {actionLoading === `${container.id}-start` ? <Loader2 size={12} className="spinning" /> : <Play size={12} fill="currentColor" />}
-                        </button>
-                      )}
-                    </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {pcs.map((container) => (
+                      <div
+                        key={container.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          background: 'var(--surface-elevated)',
+                          border: '1px solid var(--border-subtle)',
+                          transition: 'border-color 0.2s',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                          <span style={{
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {container.name}
+                          </span>
+                          <span className="mono" style={{
+                            fontSize: '10px',
+                            color: 'var(--text-secondary)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {container.image}
+                          </span>
+                        </div>
 
-                    <div className="text-right min-w-[80px]">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest leading-none mb-1 ${container.state === 'running' ? 'bg-accent-dim text-accent-color shadow-[0_0_10px_var(--accent-glow)]' : 'bg-red-dim text-red-color'}`}>
-                        {container.state}
-                      </span>
-                      <div className="text-[9px] font-bold text-text-dim tracking-tight">{container.status}</div>
-                    </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                          {/* Status dot */}
+                          <span
+                            className={`status-dot ${
+                              container.state === 'running' ? 'online' :
+                              container.state === 'paused' ? 'warning' : 'offline'
+                            }`}
+                          />
+
+                          {/* Action buttons */}
+                          {container.state === 'running' ? (
+                            <>
+                              <button
+                                onClick={() => handleControl(container.id, 'restart')}
+                                className="btn-icon"
+                                disabled={!!loading}
+                                title="Restart"
+                              >
+                                {loading === `${container.id}-restart`
+                                  ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                                  : <RotateCcw size={13} />
+                                }
+                              </button>
+                              <button
+                                onClick={() => handleControl(container.id, 'stop')}
+                                className="btn-icon"
+                                disabled={!!loading}
+                                title="Stop"
+                              >
+                                {loading === `${container.id}-stop`
+                                  ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                                  : <Square size={13} />
+                                }
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleControl(container.id, 'start')}
+                              className="btn-icon"
+                              disabled={!!loading}
+                              title="Start"
+                            >
+                              {loading === `${container.id}-start`
+                                ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                                : <Play size={13} />
+                              }
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
