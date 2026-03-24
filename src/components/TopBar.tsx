@@ -68,7 +68,7 @@ export function TopBar({ greetingName, onSettingsClick, currentTime }: TopBarPro
         {/* Weather compact */}
         <div className="weather-compact">
           <WeatherIcon condition={weather?.condition} isDay={weather?.isDay} />
-          <span style={{ fontWeight: 600, fontSize: '13px' }}>
+          <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-primary)' }}>
             {weather ? `${weather.temp}°` : '--°'}
           </span>
           {weather?.city && (

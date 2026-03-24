@@ -1,4 +1,4 @@
-import { Cpu, HardDrive, Clock, Zap, ChevronDown, Activity } from 'lucide-react';
+import { Cpu, HardDrive, Clock, Zap, ChevronDown, Activity, Thermometer } from 'lucide-react';
 import { useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { useWSChannel } from '../hooks/useWebSocket';
@@ -15,17 +15,19 @@ interface MetricProps {
   percent?: number;
   icon: React.ComponentType<{ size?: number }>;
   thresholds?: [number, number];
+  unit?: string;
 }
 
-function Metric({ label, value, percent, icon: Icon, thresholds }: MetricProps) {
+function Metric({ label, value, percent, icon: Icon, thresholds, unit }: MetricProps) {
   const color = percent !== undefined && thresholds ? getStatusColor(percent, thresholds) : 'var(--status-green)';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
       <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--surface-elevated)' }}>
         <span style={{ color }}><Icon size={18} /></span>
       </div>
-      <div className="metric-value" style={{ color }}>
+      <div className="metric-value" style={{ color, display: 'flex', alignItems: 'baseline', gap: '2px' }}>
         {value}
+        {unit && <span style={{ fontSize: '14px', fontWeight: 500 }}>{unit}</span>}
       </div>
       <div className="metric-label">{label}</div>
       {percent !== undefined && (
@@ -55,6 +57,7 @@ export function SystemHealthCard() {
   );
 
   const uptime = typeof stats.uptime === 'number' ? formatUptime(stats.uptime) : stats.uptime;
+  const temp = stats.temp;
 
   return (
     <div className="panel-section h-full flex flex-col">
@@ -70,7 +73,7 @@ export function SystemHealthCard() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-            {stats.cpu}% CPU · {stats.ram}% RAM
+            {stats.cpu}% CPU · {stats.ram}% RAM{temp ? ` · ${temp}°C` : ''}
           </span>
           <ChevronDown
             size={14}
@@ -83,12 +86,12 @@ export function SystemHealthCard() {
         </div>
       </div>
 
-      {/* Compact 2x2 Grid */}
+      {/* Compact 3-col Grid */}
       <div style={{ padding: '20px' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '12px',
         }}>
           <Metric
             label="CPU"
@@ -104,6 +107,16 @@ export function SystemHealthCard() {
             icon={Zap}
             thresholds={[70, 90]}
           />
+          {temp !== null && temp !== undefined && (
+            <Metric
+              label="Temp"
+              value={temp}
+              unit="°C"
+              percent={temp}
+              icon={Thermometer}
+              thresholds={[70, 85]}
+            />
+          )}
           <Metric
             label="Disk"
             value={`${stats.disk ?? stats.disks?.[0]?.used ?? 0}%`}

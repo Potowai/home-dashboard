@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npx*:*)",
+      "Bash(*)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(npx browser-use:*)",
+      "Bash(npx browser-use@latest --browser chromium open http://localhost:5173 --wait 5000)",
+      "Bash(npx browser-use@latest --browser chromium screenshot \"c:/Users/LPTMA/Documents/GitHub/home-dashboard/screenshot.png\" --full)",
+      "Bash(npx playwright:*)"
     ]
   }
 }

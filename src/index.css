@@ -11,7 +11,7 @@
     --surface-elevated: #222228;
     --border-subtle: #2E2E38;
     --text-primary: #F0EDE6;
-    --text-secondary: #8A8894;
+    --text-secondary: #B0ACA6;
     --accent: #E8A87C;
     --accent-dim: rgba(232, 168, 124, 0.15);
     --status-green: #7EC8A0;
@@ -35,6 +35,11 @@
     --status-red: #C45A4A;
     --graph-blue: #5A8EC8;
     --graph-purple: #8A5CA8;
+  }
+
+  [data-theme="light"] .top-bar {
+    background: rgba(250, 248, 245, 0.92);
+    border-bottom-color: var(--border-subtle);
   }
 
   * {
@@ -296,7 +301,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
-    background: rgba(15, 15, 18, 0.85);
+    background: var(--bg);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-subtle);
     position: sticky;

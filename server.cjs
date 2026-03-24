@@ -58,14 +58,18 @@ const dataCache = {
 
 async function fetchStats() {
     try {
-        const cpu = await si.currentLoad();
-        const mem = await si.mem();
-        const disk = await si.fsSize();
+        const [cpu, cpuTemp, mem, disk] = await Promise.all([
+            si.currentLoad(),
+            si.cpuTemperature(),
+            si.mem(),
+            si.fsSize(),
+        ]);
         const uptime = si.time().uptime;
 
         const timestamp = Date.now();
         const cpuValue = Math.round(cpu.currentLoad);
         const ramValue = Math.round((mem.active / mem.total) * 100);
+        const tempValue = cpuTemp.main !== -1 ? Math.round(cpuTemp.main) : null;
 
         // Store in history
         await db.run('INSERT INTO stats_history (timestamp, cpu, ram) VALUES (?, ?, ?)', [timestamp, cpuValue, ramValue]);
@@ -74,6 +78,7 @@ async function fetchStats() {
         const statsData = {
             cpu: cpuValue,
             ram: ramValue,
+            temp: tempValue,
             uptime: Math.round(uptime / 3600),
             totalMem: Math.round(mem.total / (1024 ** 3)),
             disks: disk.map(d => ({
@@ -215,9 +220,15 @@ async function fetchStatus() {
         driver: sqlite3.Database
     });
 
-    // Add new columns if they don't exist (graceful migration)
-    await db.exec(`ALTER TABLE services ADD COLUMN category TEXT DEFAULT 'System'`);
-    await db.exec(`ALTER TABLE services ADD COLUMN isPinned INTEGER DEFAULT 0`);
+    // Graceful migration: add new columns only if they don't exist
+    const tableInfo = await db.all("PRAGMA table_info(services)");
+    const columns = tableInfo.map(c => c.name);
+    if (!columns.includes('category')) {
+        await db.exec(`ALTER TABLE services ADD COLUMN category TEXT DEFAULT 'System'`);
+    }
+    if (!columns.includes('isPinned')) {
+        await db.exec(`ALTER TABLE services ADD COLUMN isPinned INTEGER DEFAULT 0`);
+    }
 
     await db.exec(`
         CREATE TABLE IF NOT EXISTS services (
