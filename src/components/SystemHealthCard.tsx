@@ -1,4 +1,4 @@
-import { Cpu, HardDrive, Clock, Zap, ChevronDown, Activity, Thermometer } from 'lucide-react';
+import { Cpu, HardDrive, Zap, ChevronDown, Activity, Thermometer } from 'lucide-react';
 import { useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { useWSChannel } from '../hooks/useWebSocket';
@@ -39,12 +39,6 @@ function Metric({ label, value, percent, icon: Icon, thresholds, unit }: MetricP
   );
 }
 
-function formatUptime(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${h}h ${m}m`;
-}
-
 export function SystemHealthCard() {
   const stats = useWSChannel('stats');
   const history = useWSChannel<any[]>('statsHistory');
@@ -56,7 +50,6 @@ export function SystemHealthCard() {
     </div>
   );
 
-  const uptime = typeof stats.uptime === 'number' ? formatUptime(stats.uptime) : stats.uptime;
   const temp = stats.temp;
 
   return (
@@ -123,11 +116,6 @@ export function SystemHealthCard() {
             percent={stats.disks?.[0]?.used}
             icon={HardDrive}
             thresholds={[70, 90]}
-          />
-          <Metric
-            label="Uptime"
-            value={uptime}
-            icon={Clock}
           />
         </div>
       </div>
