@@ -13,6 +13,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const distDir = path.join(__dirname, "dist");
+app.use(express.static(distDir));
+
 // Domains and default values from .env
 const DOMAIN = process.env.VITE_DASHBOARD_DOMAIN || 'example.com';
 const DEFAULT_IP = process.env.VITE_DEFAULT_IP || '192.168.1.1';
@@ -536,6 +539,10 @@ app.post('/api/logs/clear', (req, res) => {
     dataCache.logs = { logs: [] };
     broadcast('logs', { logs: [] });
     res.json({ success: true });
+});
+
+app.get(/^\/(?!api(?:\/|$)).*/, (req, res) => {
+    res.sendFile(path.join(distDir, "index.html"));
 });
 
 // ─── HTTP + WebSocket Server ─────────────────────────────────────────────────

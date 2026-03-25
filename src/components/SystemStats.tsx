@@ -1,4 +1,4 @@
-import { Cpu, Zap, Clock, ChevronDown, ChevronUp, HardDrive } from 'lucide-react';
+import { Cpu, Zap, ChevronDown, ChevronUp, HardDrive } from 'lucide-react';
 import { useState } from 'react';
 import { useWSChannel } from '../hooks/useWebSocket';
 import { Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
@@ -27,15 +27,15 @@ export function SystemStats() {
                 <AreaChart data={history || []}>
                   <defs>
                     <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorRam" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--blue)" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="var(--blue)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--blue)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--blue)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '11px', color: 'var(--text)' }}
                     itemStyle={{ padding: '2px 0' }}
                   />
@@ -50,7 +50,6 @@ export function SystemStats() {
             {[
               { label: 'CPU Load', value: `${stats.cpu}%`, icon: Cpu, color: 'text-accent-color', val: stats.cpu },
               { label: 'RAM Usage', value: `${stats.ram}%`, icon: Zap, color: 'text-blue-color', val: stats.ram, sub: `of ${stats.totalMem}GB` },
-              { label: 'System Uptime', value: `${stats.uptime}h`, icon: Clock, color: 'text-yellow-color' }
             ].map((item, i) => (
               <div key={i} className="bg-bg-primary p-4 rounded-xl border border-white/[0.04] hover:border-white/[0.1] transition-all">
                 <div className="flex items-center gap-3 mb-3">
@@ -85,9 +84,9 @@ export function SystemStats() {
                     <span className="text-text-primary">{disk.used}%</span>
                   </div>
                   <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-1000 ${disk.used > 90 ? 'bg-red-color' : disk.used > 70 ? 'bg-yellow-color' : 'bg-accent-color'}`} 
-                      style={{ width: `${disk.used}%` }} 
+                    <div
+                      className={`h-full transition-all duration-1000 ${disk.used > 90 ? 'bg-red-color' : disk.used > 70 ? 'bg-yellow-color' : 'bg-accent-color'}`}
+                      style={{ width: `${disk.used}%` }}
                     />
                   </div>
                 </div>
