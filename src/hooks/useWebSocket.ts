@@ -8,6 +8,7 @@ export interface WSChannelData {
   weather: any | null;
   status: { running: boolean } | null;
   logs: { logs: any[] } | null;
+  version: string | null;
 }
 
 type ChannelListener = (data: any) => void;
@@ -29,6 +30,7 @@ const store: WebSocketStore = {
     weather: null,
     status: null,
     logs: null,
+    version: null,
   },
   listeners: new Map(),
   ws: null,

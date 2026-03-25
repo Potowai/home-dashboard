@@ -44,6 +44,7 @@ function WeatherIcon({ condition, isDay }: { condition?: string; isDay?: boolean
 
 export function TopBar({ greetingName, onSettingsClick, currentTime }: TopBarProps) {
   const weather = useWSChannel('weather');
+  const version = useWSChannel('version');
 
   const hour = currentTime.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -88,6 +89,22 @@ export function TopBar({ greetingName, onSettingsClick, currentTime }: TopBarPro
 
         {/* Divider */}
         <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
+
+        {/* Version */}
+        {version && (
+          <span style={{
+            fontSize: '10px',
+            fontWeight: 700,
+            color: 'var(--text-secondary)',
+            opacity: 0.5,
+            padding: '2px 6px',
+            borderRadius: '4px',
+            background: 'var(--border-subtle)',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}>
+            v{version}
+          </span>
+        )}
 
         {/* Settings */}
         <button

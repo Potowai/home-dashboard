@@ -8,6 +8,7 @@ const si = require('systeminformation');
 const axios = require('axios');
 const http = require('http');
 const { WebSocketServer } = require('ws');
+const pkg = require('./package.json');
 
 const app = express();
 app.use(express.json());
@@ -55,6 +56,7 @@ const dataCache = {
     weather: null,
     status: null,
     logs: null,
+    version: pkg.version,
 };
 
 // ─── Data fetchers (shared between REST and WS) ─────────────────────────────
@@ -581,6 +583,7 @@ wss.on('connection', (ws) => {
         weather: dataCache.weather,
         status: dataCache.status,
         logs: { logs: logBuffer },
+        version: dataCache.version,
     };
 
     ws.send(JSON.stringify({ channel: 'snapshot', data: snapshot }));
