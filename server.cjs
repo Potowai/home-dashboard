@@ -205,8 +205,13 @@ async function fetchWeather() {
 
 async function fetchStatus() {
     try {
-        const row = await db.get('SELECT value FROM settings WHERE key = ?', 'server_running');
-        const running = row ? row.value === 'true' : false;
+        const containers = await si.dockerContainers();
+        const mcContainer = containers.find(c => c.name === 'minecraft-server' || c.name === '/minecraft-server');
+        const running = mcContainer ? mcContainer.state === 'running' : false;
+        
+        // Update database setting to reflect actual state
+        await db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['server_running', running.toString()]);
+        
         dataCache.status = { running };
         return { running };
     } catch (err) {
@@ -514,19 +519,32 @@ app.get('/api/status', async (req, res) => {
 
 app.post('/api/toggle', async (req, res) => {
     try {
-        const row = await db.get('SELECT value FROM settings WHERE key = ?', 'server_running');
-        const currentState = row ? row.value === 'true' : false;
-        const newState = !currentState;
+        const { exec } = require('child_process');
+        const mcDir = '/home/user/minecraft-server';
+        
+        // Get current state first
+        const status = await fetchStatus();
+        const currentState = status.running;
+        const action = currentState ? 'down' : 'up -d';
+        
+        addLog('INFO', `${currentState ? 'Stopping' : 'Starting'} Minecraft server...`);
+        
+        exec(`docker compose -f ${path.join(mcDir, 'docker-compose.yml')} ${action}`, async (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Exec error: ${error}`);
+                addLog('ERROR', `Failed to ${currentState ? 'stop' : 'start'} MC: ${error.message}`);
+                return res.status(500).json({ error: error.message });
+            }
+            
+            // Wait a bit for status to update
+            setTimeout(async () => {
+                const newStatus = await fetchStatus();
+                broadcast('status', newStatus);
+                addLog('SUCCESS', `Minecraft server is now ${newStatus.running ? 'online' : 'offline'}`);
+            }, 2000);
 
-        await db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['server_running', newState.toString()]);
-
-        const result = { success: true, running: newState };
-        res.json(result);
-
-        // Push status update & add log
-        dataCache.status = { running: newState };
-        broadcast('status', { running: newState });
-        addLog('INFO', `Minecraft server ${newState ? 'started' : 'stopped'}`);
+            res.json({ success: true, running: !currentState });
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

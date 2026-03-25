@@ -7,11 +7,12 @@
     "dev": "vite --host",
     "server": "nodemon server.cjs",
     "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
-    "build": "tsc -b && vite build",
+    "build": "bash -lc \"source /home/user/.nvm/nvm.sh && tsc -b && vite build\"",
     "lint": "eslint .",
     "preview": "vite preview",
-    "restart": "sudo systemctl restart home-dashboard.service",
-    "deploy": "npm run build && npm run restart"
+    "restart": "sudo -n systemctl restart home-dashboard.service",
+    "deploy": "bash ./deploy.sh",
+    "watch:deploy": "nodemon --watch src --watch public --watch server.cjs --watch package.json --watch .env --ext js,jsx,ts,tsx,cjs,json,css,html --ignore dist --ignore node_modules --delay 1 --exec \"bash ./deploy.sh\""
   },
   "dependencies": {
     "@mantine/core": "^8.3.18",
